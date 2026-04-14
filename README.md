@@ -1,4 +1,3 @@
-cat << 'EOF' > README.md
 # Asset Management System
 
 A simple PHP-based Asset Management System to manage company assets efficiently.
