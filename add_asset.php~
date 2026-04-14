@@ -1,0 +1,181 @@
+﻿<?php
+// --- 1. SESSION & ACCESS CHECK (Must be at the very top) ---
+session_start();
+
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    header("location: index.php");
+    exit;
+}
+
+// --- 2. DATABASE SETTINGS ---
+$host = "localhost";
+$user = "root";
+$pass = "";
+$dbname = "asset_db";
+
+$conn = mysqli_connect($host, $user, $pass, $dbname);
+if (!$conn) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// --- 3. FORM PROCESSING ---
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $category = mysqli_real_escape_string($conn, $_POST['category']);
+    $serial = mysqli_real_escape_string($conn, $_POST['serial_number']);
+    $csrv = mysqli_real_escape_string($conn, $_POST['csrv_number']);
+    $rec_date = mysqli_real_escape_string($conn, $_POST['received_date']);
+    $user_name = mysqli_real_escape_string($conn, $_POST['assigned_user']);
+    $dept = mysqli_real_escape_string($conn, $_POST['assigned_dept']);
+
+    // File upload logic
+    $bill = "";
+    if (!empty($_FILES['bill_attachment']['name'])) {
+        if (!is_dir('uploads')) { mkdir('uploads', 0777, true); }
+        $bill = time() . "_" . $_FILES['bill_attachment']['name'];
+        move_uploaded_file($_FILES['bill_attachment']['tmp_name'], "uploads/" . $bill);
+    }
+
+    $model = mysqli_real_escape_string($conn, $_POST['model'] ?? '');
+    $mac = mysqli_real_escape_string($conn, $_POST['mac_address'] ?? '');
+    $storage = mysqli_real_escape_string($conn, $_POST['storage'] ?? '');
+    $ram = mysqli_real_escape_string($conn, $_POST['ram'] ?? '');
+    $processor = mysqli_real_escape_string($conn, $_POST['processor'] ?? '');
+    $manufacturer = mysqli_real_escape_string($conn, $_POST['manufacturer'] ?? '');
+    $cartridge = mysqli_real_escape_string($conn, $_POST['cartridge_model'] ?? '');
+    $asset_type = mysqli_real_escape_string($conn, $_POST['asset_type'] ?? '');
+
+    $sql = "INSERT INTO assets (category, serial_number, csrv_number, mac_address, storage, ram, processor, model, manufacturer, cartridge_model, asset_type, received_date, bill_attachment, assigned_user, assigned_dept) 
+            VALUES ('$category', '$serial', '$csrv', '$mac', '$storage', '$ram', '$processor', '$model', '$manufacturer', '$cartridge', '$asset_type', '$rec_date', '$bill', '$user_name', '$dept')";
+
+    if (mysqli_query($conn, $sql)) {
+        echo "<script>alert('Asset Saved Successfully!'); window.location.href='dashboard.php';</script>";
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Asset | Kernex</title>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    body {
+        min-height: 100vh;
+        background-color: #f4f6f9;
+        background-image: radial-gradient(#dcdcdc 1px, transparent 1px);
+        background-size: 20px 20px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 60px;
+    }
+
+    .card {
+        background: #ffffff;
+        padding: 35px 25px;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    h2 { color: #2c2c2c; margin-bottom: 10px; text-align: center; }
+    hr { margin: 15px 0; border: 0; border-top: 1px solid #ddd; }
+    .hidden-section { display: none; background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #007bff; }
+
+    label { font-weight: bold; color: #333; margin-top: 10px; display: block; }
+    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+
+    .btn { background: #007bff; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+    .btn:hover { background: #0056b3; }
+
+    .back-link { display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; }
+
+    @media (max-width: 600px) {
+        body { padding-top: 40px; }
+        .card { padding: 25px 15px; }
+    }
+</style>
+</head>
+
+<body>
+<div class="card">
+    <a href="dashboard.php" class="back-link">⬅ Back to Dashboard</a>
+    <h2>Add New Asset</h2>
+    <hr>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label>Asset Category</label>
+        <select name="category" id="assetSelector" onchange="updateForm()" required>
+            <option value="">-- Choose Category --</option>
+            <option value="CPU">CPU</option>
+            <option value="Monitor">Monitor</option>
+            <option value="Printer">Printer</option>
+            <option value="Other">Other Assets</option>
+        </select>
+
+        <div id="cpu_fields" class="hidden-section">
+            <input type="text" name="mac_address" placeholder="MAC Address">
+            <input type="text" name="storage" placeholder="Storage (e.g. 512GB SSD)">
+            <input type="text" name="ram" placeholder="RAM (e.g. 8GB)">
+            <input type="text" name="processor" placeholder="Processor">
+            <input type="text" name="model" placeholder="Model">
+        </div>
+
+        <div id="monitor_fields" class="hidden-section">
+            <input type="text" name="model" placeholder="Model">
+            <input type="text" name="manufacturer" placeholder="Manufacturer">
+        </div>
+
+        <div id="printer_fields" class="hidden-section">
+            <input type="text" name="model" placeholder="Model">
+            <input type="text" name="cartridge_model" placeholder="Cartridge Model">
+        </div>
+
+        <div id="other_fields" class="hidden-section">
+            <input type="text" name="asset_type" placeholder="Type of Asset (e.g. UPS)">
+        </div>
+
+        <label>Serial Number</label>
+        <input type="text" name="serial_number" placeholder="Serial Number" required>
+        <input type="text" name="csrv_number" placeholder="CSRV Number" required>
+
+        <label>Received Date</label>
+        <input type="date" name="received_date" required>
+
+        <input type="text" name="assigned_user" placeholder="Assigned User" required>
+        <input type="text" name="assigned_dept" placeholder="Assigned Department" required>
+
+        <label>Bill Attachment</label>
+        <input type="file" name="bill_attachment">
+
+        <button type="submit" class="btn">SAVE ASSET</button>
+    </form>
+</div>
+
+<script>
+function updateForm() {
+    var category = document.getElementById("assetSelector").value;
+
+    document.getElementById("cpu_fields").style.display = "none";
+    document.getElementById("monitor_fields").style.display = "none";
+    document.getElementById("printer_fields").style.display = "none";
+    document.getElementById("other_fields").style.display = "none";
+
+    if(category === "CPU") document.getElementById("cpu_fields").style.display = "block";
+    if(category === "Monitor") document.getElementById("monitor_fields").style.display = "block";
+    if(category === "Printer") document.getElementById("printer_fields").style.display = "block";
+    if(category === "Other") document.getElementById("other_fields").style.display = "block";
+}
+</script>
+</body>
+</html>

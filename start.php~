@@ -1,0 +1,105 @@
+<?php
+// Initialize the session
+session_start();
+ 
+// Check if the user is logged in, if not then redirect him to login page
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    header("location: index.php");
+    exit;
+}
+
+// Print out on webpage current SESSION, POST and GET array values
+function dbgSess()
+{
+    echo '<br> SESSION : <br>';
+    var_dump($_SESSION);
+    echo '<br> POST : <br>';
+    var_dump($_POST);
+    echo '<br> GET : <br>';
+    var_dump($_GET);
+    echo '<br><br>';
+} // End of dbgSess()
+
+// Include config file
+require_once "config.php";
+
+    if( isset($_GET['project']) ) $_SESSION["project"] = $_GET["project"];
+    else $_SESSION["project"] = "--";
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Work Order Submission</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="font-awesome.min.css">
+    <style>
+	body {
+		background-image: url('paper.jpg');
+	}
+	.wrapper{
+		margin: 0px 5px 0px 5px;
+	}
+	table > thead > tr > th {
+		vertical-align: middle;
+		text-align: center;
+		padding: 8px;
+		margin: 2px;
+	}
+	table > tbody > tr > td {
+		vertical-align: middle;
+		text-align: center;
+		padding: 2px;
+		margin: 2px;
+	}
+	ol > li {
+		font-size: 14px;
+	}
+	.table > tbody > tr > td {
+		vertical-align: middle;
+		text-align: center;
+		padding: 2px;
+	}
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+    <div class="container">
+		<table id="toptbl" class="align-middle" class="table" style="background-color: #FBEEE6;width:300px;" border="1">
+	<tbody>
+		<tr>
+		<td style="text-align:center;width:300px;">
+		<font style="font-weight:bold;font-size:26px;">
+		<font color="#009900"> Welcome </font></font></td>
+		<td><h6><?php echo htmlspecialchars($_SESSION["fname"]) . " " .  htmlspecialchars($_SESSION["lname"]) .
+		" (" . ( htmlspecialchars($_SESSION["email"]) ) . ") "; ?></h6>
+		</td>
+		</tr>
+		<tr><td><a href="/Home" class="btn btn-sm btn-info">Home</a></td>
+		    <td><a href="logout.php">Sign Out</a></td>
+		</td></tr>
+		</tbody>
+		</table>
+    </div>
+    </div>
+    </div>
+	<br><br>
+    <div class="wrapper">
+    <div class="container ml-2 ">
+	<h2> Welcome to Home Page </h2>
+    </div>
+    </div>
+
+    <div class="wrapper">
+    <div class="container ml-2 ">
+	<hr>
+	<b>Copyright © 2026</b>
+	<span style="float:right;">Version: Dev1.0</span>
+    </div>
+    </div>
+    <br><br>
+</body>
+</html>
+
